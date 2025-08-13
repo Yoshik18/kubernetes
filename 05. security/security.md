@@ -292,19 +292,217 @@ users:
     client-key-data: LS0tLS1CRUdJTi...
 ```
 
-### KubeConfig Commands
+### What are Contexts?
+**Contexts** combine cluster, user, and namespace information into a named configuration that allows easy switching between different Kubernetes environments.[1][2]
+
+### Context Components
+- **Cluster**: Which Kubernetes cluster to connect to
+- **User**: Which user credentials to use for authentication
+- **Namespace**: Default namespace for kubectl commands (optional)
+
+### Context Structure
+```yaml
+contexts:
+- name: dev-user@development-cluster
+  context:
+    cluster: development-cluster    # Which cluster to use
+    user: dev-user                 # Which user credentials to use
+    namespace: development         # Default namespace (optional)
+- name: admin@production-cluster
+  context:
+    cluster: production-cluster
+    user: admin
+    namespace: production
+```
+
+### Context Management Commands
 ```bash
-# View current configuration
-kubectl config view
+# View all contexts
+kubectl config get-contexts
 
-# Switch context
-kubectl config use-context prod-user@production-cluster
-
-# Get current context
+# View current context
 kubectl config current-context
 
-# Set namespace for context
+# Switch to a different context
+kubectl config use-context dev-user@development-cluster
+
+# Switch to production context
+kubectl config use-context admin@production-cluster
+
+# View detailed configuration
+kubectl config view
+
+# View only current context details
+kubectl config view --minify
+```
+
+### Creating and Modifying Contexts
+```bash
+# Create a new context
+kubectl config set-context my-context \
+  --cluster=my-cluster \
+  --user=my-user \
+  --namespace=my-namespace
+
+# Modify existing context namespace
+kubectl config set-context dev-user@development-cluster --namespace=testing
+
+# Set namespace for current context
 kubectl config set-context --current --namespace=production
+
+# Create context with cluster and user
+kubectl config set-context staging-context \
+  --cluster=staging-cluster \
+  --user=staging-user
+```
+
+### Context Examples
+```bash
+# Development environment context
+kubectl config set-context development \
+  --cluster=dev-cluster \
+  --user=dev-user \
+  --namespace=development
+
+# Production environment context  
+kubectl config set-context production \
+  --cluster=prod-cluster \
+  --user=admin-user \
+  --namespace=production
+
+# Testing environment context
+kubectl config set-context testing \
+  --cluster=test-cluster \
+  --user=test-user \
+  --namespace=testing
+```
+
+### Context Best Practices
+- **Descriptive naming**: Use clear context names like `dev-user@development`
+- **Environment separation**: Different contexts for dev, staging, production
+- **Namespace defaults**: Set appropriate default namespaces
+- **Regular cleanup**: Remove unused contexts periodically
+- **Backup configs**: Keep backup copies of important kubeconfig files
+
+### Context Switching Workflows
+```bash
+# Daily workflow example
+# Start with development
+kubectl config use-context development
+kubectl get pods  # Shows pods in development namespace
+
+# Switch to production for deployment
+kubectl config use-context production
+kubectl apply -f production-deployment.yaml
+
+# Quick check in staging
+kubectl config use-context staging
+kubectl get services
+
+# Back to development
+kubectl config use-context development
+```
+
+### Advanced Context Operations
+```bash
+# Delete a context
+kubectl config delete-context old-context
+
+# Rename context (delete and recreate)
+kubectl config delete-context old-name
+kubectl config set-context new-name --cluster=cluster --user=user
+
+# Export specific context
+kubectl config view --context=production --minify --flatten > prod-config.yaml
+
+# Use temporary context without switching
+kubectl --context=production get pods
+kubectl --context=development apply -f app.yaml
+```
+
+### Multi-Cluster Context Setup
+```yaml
+# Example: Managing multiple environments
+apiVersion: v1
+kind: Config
+current-context: development
+
+# Development cluster
+clusters:
+- name: dev-cluster
+  cluster:
+    server: https://dev-api.company.com:6443
+    certificate-authority-data: LS0tLS...
+
+# Staging cluster  
+- name: staging-cluster
+  cluster:
+    server: https://staging-api.company.com:6443
+    certificate-authority-data: LS0tLS...
+
+# Production cluster
+- name: prod-cluster
+  cluster:
+    server: https://prod-api.company.com:6443
+    certificate-authority-data: LS0tLS...
+
+# Users for different environments
+users:
+- name: dev-user
+  user:
+    client-certificate-data: LS0tLS...
+    client-key-data: LS0tLS...
+- name: staging-user
+  user:
+    client-certificate-data: LS0tLS...
+    client-key-data: LS0tLS...
+- name: prod-admin
+  user:
+    client-certificate-data: LS0tLS...
+    client-key-data: LS0tLS...
+
+# Contexts combining clusters and users
+contexts:
+- name: development
+  context:
+    cluster: dev-cluster
+    user: dev-user
+    namespace: development
+- name: staging
+  context:
+    cluster: staging-cluster
+    user: staging-user
+    namespace: staging
+- name: production
+  context:
+    cluster: prod-cluster
+    user: prod-admin
+    namespace: production
+```
+
+### Context Security Considerations
+- **User isolation**: Use different users for different environments
+- **Namespace boundaries**: Set appropriate default namespaces
+- **Access control**: Ensure users only have access to appropriate clusters
+- **Audit trails**: Context switches can be logged for security auditing
+- **Credential management**: Rotate certificates and tokens regularly
+
+### Troubleshooting Context Issues
+```bash
+# Check context configuration
+kubectl config view --context=problematic-context
+
+# Verify cluster connectivity
+kubectl --context=production cluster-info
+
+# Test authentication
+kubectl --context=development auth can-i get pods
+
+# Debug certificate issues
+kubectl config view --raw -o jsonpath='{.contexts[?(@.name=="production")].context}'
+
+# Check current context settings
+kubectl config get-contexts $(kubectl config current-context)
 ```
 
 ## Image Security
