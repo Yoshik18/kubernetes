@@ -3,7 +3,7 @@
 ## Volumes
 
 ### What are Volumes in Kubernetes?
-**Volumes** provide persistent storage for pods that survives container restarts. Unlike the container's ephemeral filesystem, volumes persist data even when containers are recreated or restarted.[1]
+**Volumes** provide persistent storage for pods that survives container restarts. Unlike the container's ephemeral filesystem, volumes persist data even when containers are recreated.
 
 ### Volume Purpose and Benefits
 - **Data persistence**: Maintains data across container restarts
